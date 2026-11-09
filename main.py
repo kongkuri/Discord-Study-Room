@@ -100,12 +100,20 @@ class StudyBot(discord.Client):
         if closed:
             log.info("지난 실행에서 열린 채 남은 구간 %d개를 정리했어요", closed)
 
-        if GUILD_ID:  # 테스트 서버에는 슬래시 명령어가 즉시 반영된다
-            guild = discord.Object(id=int(GUILD_ID))
-            self.tree.copy_global_to(guild=guild)
-            await self.tree.sync(guild=guild)
-        else:  # 전역 동기화는 반영까지 시간이 걸릴 수 있다
-            await self.tree.sync()
+        try:
+            if GUILD_ID:  # 테스트 서버에는 슬래시 명령어가 즉시 반영된다
+                guild = discord.Object(id=int(GUILD_ID))
+                self.tree.copy_global_to(guild=guild)
+                await self.tree.sync(guild=guild)
+            else:  # 전역 동기화는 반영까지 시간이 걸릴 수 있다
+                await self.tree.sync()
+        except discord.Forbidden:
+            log.error(
+                "슬래시 명령어를 등록하지 못했어요 (403 Missing Access). "
+                "봇이 GUILD_ID(%s) 서버에 초대됐는지, 초대할 때 applications.commands 권한을 "
+                "체크했는지 확인하세요. 시간 측정은 계속 동작해요.",
+                GUILD_ID,
+            )
 
         self.heartbeat.start()
 
